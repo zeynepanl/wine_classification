@@ -207,7 +207,7 @@ else:
 
 
 
-"""
+
 
 
 # Isı haritasını çizme
@@ -423,10 +423,6 @@ X = wines[features].copy()
 print("Extracted Features (X):")
 print(X.head())
 
-
-# Veri setini yükleme
-wines = pd.read_csv('./path_to_your_dataset.csv')  # Dosya yolunu düzenleyin
-
 # Hedef değişkeni (target) ayrıştırma
 y = wines.color.copy()
 
@@ -437,7 +433,7 @@ print(y.head())
 # Hedef değişkenin dağılımını görüntüleme
 color_distribution = wines.groupby('color').color.count()
 print("\nDistribution of the target variable (color):")
-print(color_distribution) """
+print(color_distribution) 
 
 
 
