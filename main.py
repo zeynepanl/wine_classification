@@ -726,3 +726,46 @@ ax2.set_ylabel('True Label')
 
 # Grafikleri göster
 plt.show()
+
+
+
+
+
+
+
+
+
+from scipy.stats import skew, kurtosis
+
+# Sadece sayısal sütunları seçme
+numeric_columns = wines.select_dtypes(include=['float64', 'int64'])
+
+# Medyan Hesaplama
+median_values = numeric_columns.median()
+print("\nSayısal Sütunların Medyan Değerleri:")
+print(median_values)
+
+# Mod Hesaplama
+mode_values = numeric_columns.mode().iloc[0]
+print("\nSayısal Sütunların Mod Değerleri:")
+print(mode_values)
+
+# Varyans Hesaplama
+variance_values = numeric_columns.var()
+print("\nSayısal Sütunların Varyans Değerleri:")
+print(variance_values)
+
+# Standart Sapma Hesaplama
+std_dev_values = numeric_columns.std()
+print("\nSayısal Sütunların Standart Sapma Değerleri:")
+print(std_dev_values)
+
+# Çarpıklık Hesaplama
+skewness_values = numeric_columns.apply(skew)
+print("\nSayısal Sütunların Çarpıklık (Skewness) Değerleri:")
+print(skewness_values)
+
+# Basıklık Hesaplama
+kurtosis_values = numeric_columns.apply(kurtosis)
+print("\nSayısal Sütunların Basıklık (Kurtosis) Değerleri:")
+print(kurtosis_values)
