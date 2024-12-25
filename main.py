@@ -17,6 +17,7 @@ from sklearn.preprocessing import StandardScaler
 import os
 import joblib
 from scipy.stats import shapiro
+import random
 
 
 
@@ -206,7 +207,39 @@ else:
     print("'color' sütunu korelasyon için uygun değil.")
 
 
+# Sayısal sütunlar için histogram grafikleri
+for column in numeric_columns.columns:
+    plt.figure(figsize=(8, 5))
+    sns.histplot(wines[column], kde=True, bins=30, color='skyblue', edgecolor='black')
+    plt.title(f'Histogram of {column}', fontsize=14, fontweight='bold')
+    plt.xlabel(column, fontsize=12)
+    plt.ylabel('Frequency', fontsize=12)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.show()
 
+
+
+# Pie chart için quality class dağılımını hesaplama
+quality_class_distribution = wines['quality class'].value_counts()
+
+# Pie chart oluşturma
+plt.figure(figsize=(8, 8))
+colors = ['dodgerblue', 'palegreen', 'coral']
+explode = (0.05, 0.05, 0.05)  # Dilimleri dışarıya çekme
+plt.pie(
+    quality_class_distribution,
+    labels=quality_class_distribution.index,
+    autopct='%1.1f%%',
+    startangle=140,
+    colors=colors,
+    explode=explode
+)
+
+# Başlık ekleme
+plt.title('Wine Quality Class Distribution', fontsize=16, fontweight='bold')
+
+# Grafiği gösterme
+plt.show()
 
 
 
@@ -595,7 +628,7 @@ y = y_qclass
 print("Hedef değişkenin ilk 5 değeri:")
 print(y.head())
 
-# Sınıf dağılımını kontrol etme
+
 print("\nHedef değişkenin sınıf dağılımı:")
 print(y.value_counts())
 
@@ -744,41 +777,69 @@ plt.show()
 
 
 
-
-
-
-
 from scipy.stats import skew, kurtosis
 
-# Sadece sayısal sütunları seçme
 numeric_columns = wines.select_dtypes(include=['float64', 'int64'])
 
-# Medyan Hesaplama
 median_values = numeric_columns.median()
 print("\nSayısal Sütunların Medyan Değerleri:")
 print(median_values)
 
-# Mod Hesaplama
 mode_values = numeric_columns.mode().iloc[0]
 print("\nSayısal Sütunların Mod Değerleri:")
 print(mode_values)
 
-# Varyans Hesaplama
 variance_values = numeric_columns.var()
 print("\nSayısal Sütunların Varyans Değerleri:")
 print(variance_values)
 
-# Standart Sapma Hesaplama
 std_dev_values = numeric_columns.std()
 print("\nSayısal Sütunların Standart Sapma Değerleri:")
 print(std_dev_values)
 
-# Çarpıklık Hesaplama
 skewness_values = numeric_columns.apply(skew)
 print("\nSayısal Sütunların Çarpıklık (Skewness) Değerleri:")
 print(skewness_values)
 
-# Basıklık Hesaplama
 kurtosis_values = numeric_columns.apply(kurtosis)
 print("\nSayısal Sütunların Basıklık (Kurtosis) Değerleri:")
 print(kurtosis_values)
+
+
+
+def predict_random_wines(model, wines, num_samples=5):
+    """
+    Rastgele num_samples kadar örnek seçer ve türünü (red/white) ve kalitesini (low/medium/high) tahmin eder.
+    """
+    # Veri setinden rastgele num_samples kadar örnek seç
+    random_samples = wines.sample(num_samples, random_state=random.randint(1, 100))
+    
+    # Özellik sütunlarını seç
+    features = wines.drop(['type', 'quality', 'quality class', 'color'], axis=1).columns
+    X_random = random_samples[features]
+    
+    # Tahminler yap
+    color_predictions = model.predict(X_random)
+    quality_predictions = model.predict_proba(X_random)
+    
+    # Tür ve kalite sınıflarını eşleştirme
+    type_map = {0: 'red', 1: 'white'}
+    quality_map = {0: 'low', 1: 'medium', 2: 'high'}
+    
+    # Sonuçları terminalde gösterme
+    print(f"\n{'Sample':<10} {'Actual Type':<12} {'Predicted Type':<15} {'Actual Quality':<15} {'Predicted Quality':<15}")
+    print("-" * 70)
+    for idx, (actual, predicted_color, probs) in enumerate(zip(random_samples.iterrows(), color_predictions, quality_predictions)):
+        row_idx, actual_row = actual
+        actual_type = actual_row['type']
+        actual_quality = actual_row['quality class']
+        predicted_type = type_map[predicted_color]
+        predicted_quality_idx = probs.argmax()  # En yüksek olasılıklı kalite sınıfını seç
+        predicted_quality = quality_map[predicted_quality_idx]
+        
+        print(f"{idx+1:<10} {actual_type:<12} {predicted_type:<15} {actual_quality:<15} {predicted_quality:<15}")
+        
+    print("\nTahminler tamamlandı.")
+
+# Rastgele tahmin için fonksiyonu çağır
+predict_random_wines(best_model, wines, num_samples=5)
