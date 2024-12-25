@@ -16,13 +16,16 @@ from sklearn.preprocessing import StandardScaler
 
 import os
 import joblib
-
+from scipy.stats import shapiro
 
 
 
 
 data_rw = pd.read_csv('./data/winequality-red.csv', sep=';')
 data_ww = pd.read_csv('./data/winequality-white.csv', sep=';')
+
+
+
 
 # Veri çerçevesinin boyutunu kontrol etme
 print(f'Red Wine Dataset: {data_rw.shape}')
@@ -111,6 +114,20 @@ quality_stats = pd.concat([lqs, mqs, hqs], axis=1, keys=['Low Quality Wine', 'Me
 print(quality_stats)
 
 
+
+
+
+
+
+numeric_columns = wines.select_dtypes(include=['float64', 'int64'])
+# Normallik testi (Shapiro-Wilk)
+
+# Sadece sayısal sütunlar üzerinde test yapıyoruz
+print("\nShapiro-Wilk Normality Test Sonuçları:\n")
+for column in numeric_columns.columns:
+    stat, p_value = shapiro(wines[column])
+    sonuc = "Uygun" if p_value >= 0.05 else "Uygun Değil"
+    print(f"{column}: Test İstatistiği = {stat:.6f}, p-değeri = {p_value:.6e}, Sonuç = {sonuc}")
 
 
 # Grafik düzenini oluşturma
