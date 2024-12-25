@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
@@ -10,6 +11,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+
+import os
+import joblib
 
 
 
@@ -184,7 +190,7 @@ else:
 
 
 
-
+"""
 
 
 # Isı haritasını çizme
@@ -414,7 +420,7 @@ print(y.head())
 # Hedef değişkenin dağılımını görüntüleme
 color_distribution = wines.groupby('color').color.count()
 print("\nDistribution of the target variable (color):")
-print(color_distribution) 
+print(color_distribution) """
 
 
 
@@ -537,3 +543,186 @@ print(classification_report(y_test, y_pred, target_names=target_names), '\n')
 
 print("Confusion Matrix:")
 print(confusion_matrix(y_test, y_pred)) 
+
+
+
+
+
+
+
+
+# Veri setinin ilk 5 satırını kontrol edin
+print("Veri setinin ilk 5 satırı:")
+print(wines.head())
+
+# Özellikleri seçme (gereksiz sütunları çıkarma)
+features = wines.drop(['type', 'quality', 'quality class', 'color'], axis=1).columns
+
+# Özelliklerin bir kopyasını oluşturma
+X = wines[features].copy()
+
+# İlk 5 satırı kontrol etme
+print("\nSeçilen özelliklerin ilk 5 satırı:")
+print(X.head())
+
+
+
+
+
+
+
+
+
+y_qclass = wines['quality class'].map({'low': 0, 'medium': 1, 'high': 2})
+
+# Hedef değişkeni atanması
+y = y_qclass
+
+# İlk 5 satırı görüntüleme
+print("Hedef değişkenin ilk 5 değeri:")
+print(y.head())
+
+# Sınıf dağılımını kontrol etme
+print("\nHedef değişkenin sınıf dağılımı:")
+print(y.value_counts())
+
+
+
+
+
+
+
+
+# Çubuk grafiği oluşturma
+sns.countplot(
+    x='quality class', 
+    data=wines, 
+    edgecolor='black', 
+    order=['low', 'medium', 'high']
+)
+
+# Başlık ekleme
+plt.title(
+    'Wine Sample Distribution by Quality Class', 
+    fontsize=14, 
+    pad=10
+)
+
+# Grafiği gösterme
+plt.show()
+
+
+
+
+
+
+# Eğitim ve test setlerine bölme
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.30, random_state=77, stratify=y)
+
+# Pipeline tanımlama
+pipeline = Pipeline([
+    ('scl', StandardScaler()),  # Ölçeklendirme
+    ('rfc', RandomForestClassifier(random_state=77))  # Model
+])
+
+print("Eğitim ve test setleri oluşturuldu, pipeline tanımlandı.")
+
+# Model dosyası adı
+model_file = "best_model.pkl"
+
+# Model dosyası var mı kontrol et
+if os.path.exists(model_file):
+    print(f"{model_file} bulundu. Model yükleniyor...")
+    best_model = joblib.load(model_file)  # Kaydedilmiş modeli yükle
+    print("Model başarıyla yüklendi.")
+else:
+    print("Model bulunamadı, model eğitiliyor...")
+
+    # Pipeline parametrelerini listeleme
+    print(pipeline.get_params())
+
+    # Hiperparametre ızgarasını tanımlama
+    param_grid = {
+        'rfc__min_samples_leaf': [1, 2, 3],           # Yaprak düğümdeki minimum örnek sayısı
+        'rfc__min_samples_split': [2, 3, 4],         # Dallanma için minimum örnek sayısı
+        'rfc__n_estimators': [150, 175, 200],        # Ağaç sayısı
+        'rfc__max_depth': [20, 40, None],            # Maksimum derinlik
+        'rfc__criterion': ['gini', 'entropy'],       # Bölünme ölçütü
+        'rfc__class_weight': ['balanced', None]      # Sınıf ağırlıkları
+    }
+
+    print("Hiperparametre ızgarası:")
+    print(param_grid)
+
+    # GridSearchCV işlemini başlatma
+    clf = GridSearchCV(estimator=pipeline, param_grid=param_grid, cv=10, n_jobs=-1)
+
+    # Modeli eğitme
+    clf.fit(X_train, y_train)
+
+    # En iyi hiperparametreleri yazdırma
+    print("Best Parameters:", clf.best_params_)
+
+    # GridSearchCV'den en iyi modeli alın
+    best_model = clf.best_estimator_
+
+    # En iyi modelin detaylarını yazdırın
+    print("Best Model:")
+    print(best_model)
+
+    # Modeli kaydet
+    joblib.dump(best_model, model_file)
+    print(f"Model başarıyla {model_file} dosyasına kaydedildi.")
+
+# Eğitilmiş modeli kullanabilirsiniz
+# Örneğin: y_pred = best_model.predict(X_test)
+
+
+
+# Test seti üzerinde tahminler yap
+y_pred = best_model.predict(X_test)
+
+# Performans değerlendirme raporu
+target_names = ['low', 'medium', 'high']
+print("Classification Report:")
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+# Karışıklık matrisi
+print("Confusion Matrix:")
+print(confusion_matrix(y_test, y_pred))
+
+# Model doğruluğunu hesapla
+accuracy = accuracy_score(y_test, y_pred)
+print("Accuracy Score:", accuracy)
+
+
+
+
+
+# Karışıklık matrisi hesapla
+mat = confusion_matrix(y_test, y_pred)
+
+# Subplot oluştur
+f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+f.suptitle('Random Forest Classifier', fontsize=14)
+f.subplots_adjust(top=0.85, wspace=0.3)
+
+# Normalizasyon olmadan karışıklık matrisi
+sns.heatmap(mat, annot=True, fmt='d', cbar=True, square=True, cmap='Oranges', ax=ax1)
+ax1.set_xticklabels(labels=['low', 'medium', 'high'])
+ax1.set_yticklabels(labels=['low', 'medium', 'high'])
+ax1.set_title('Confusion Matrix w/o Normalization')
+ax1.set_xlabel('Predicted Label')
+ax1.set_ylabel('True Label')
+
+# Normalizasyon ile karışıklık matrisi
+matn = mat.astype('float') / mat.sum(axis=1)[:, np.newaxis]
+sns.heatmap(matn, annot=True, fmt='.2f', cbar=True, square=True, cmap='Oranges', ax=ax2)
+ax2.set_xticklabels(labels=['low', 'medium', 'high'])
+ax2.set_yticklabels(labels=['low', 'medium', 'high'])
+ax2.set_title('Normalized Confusion Matrix')
+ax2.set_xlabel('Predicted Label')
+ax2.set_ylabel('True Label')
+
+# Grafikleri göster
+plt.show()
